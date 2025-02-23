@@ -14,6 +14,16 @@ func HashPassword(password *string) (*string, error) {
 	return &str, err
 }
 
+// CheckPatronymic проверяет является ли patronymic nil или нет
+func CheckPatronymic(patronymic *string) string {
+	if patronymic == nil {
+		*patronymic = ""
+		return *patronymic
+	} else {
+		return *patronymic
+	}
+}
+
 // CheckPassword проверяет, соответствует ли введенный пароль хешу.
 func CheckPassword(hashedPassword, password *string) error {
 	return bcrypt.CompareHashAndPassword([]byte(*hashedPassword), []byte(*password))

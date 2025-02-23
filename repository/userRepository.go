@@ -12,6 +12,7 @@ import (
 type UserRepository interface {
 	CreateUser(user *model.User) (*model.User, error)
 	GetUserByID(id int) (*model.User, error)
+	GetUserExist(user *model.User) (*model.User, error)
 	//GetUserByEmail(email string) (*model.User, error)
 	//UpdateUser(user *model.User) error
 	//DeleteUser(id string) error
@@ -57,24 +58,40 @@ func (u *userRepository) GetUserByID(id int) (*model.User, error) {
 	defer u.logger.Sync()
 	defer u.dbpool.Close()
 	var user model.User
-	var patronymic *string
 	err := u.dbpool.QueryRow(context.Background(),
 		`SELECT id, name, patronymic, surname, email, phone_number, login FROM "user" WHERE id = $1`, &id).
-		Scan(&id, &user.Name, &patronymic, &user.Surname, &user.Email, &user.PhoneNumber, &user.Login)
+		Scan(&id, &user.Name, &user.Patronymic, &user.Surname, &user.Email, &user.PhoneNumber, &user.Login)
 	if err != nil {
 		return nil, err
 	}
-	if patronymic != nil {
-		user.Patronymic = *patronymic
-	} else {
-		user.Patronymic = ""
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
+	user.Patronymic = auth.CheckPatronymic(&user.Patronymic)
 	return &user, nil
+}
+
+func (u userRepository) GetUserExist(user *model.User) (*model.User, error) {
+	defer u.logger.Sync()
+	defer u.dbpool.Close()
+	var password string
+	err := u.dbpool.QueryRow(context.Background(),
+		`SELECT password FROM "user" WHERE login = $1`, &user.Login).
+		Scan(&password)
+	if err != nil {
+		return nil, err
+	}
+
+	err = auth.CheckPassword(&password, &user.Password)
+	if err != nil {
+		u.logger.Error("Incorrect login or password", zap.String("login", user.Login))
+		return nil, err
+	}
+	err = u.dbpool.QueryRow(context.Background(),
+		`SELECT id, name, patronymic, surname, email, phone_number, login FROM "user" WHERE login = $1`, &user.Login).
+		Scan(&user.ID, &user.Name, &user.Patronymic, &user.Surname, &user.Email, &user.PhoneNumber, &user.Login)
+	if err != nil {
+		return nil, err
+	}
+	user.Patronymic = auth.CheckPatronymic(&user.Patronymic)
+	return user, nil
 }
 
 func isValidEmail(email string) bool {
