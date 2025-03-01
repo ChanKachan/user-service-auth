@@ -1,8 +1,11 @@
 package auth
 
 import (
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"net/mail"
+	"reflect"
+	"user-service/internal/model"
 )
 
 func HashPassword(password *string) (*string, error) {
@@ -36,4 +39,17 @@ func IsValidEmail(email string) (string, error) {
 		return "", err
 	}
 	return email, nil
+}
+
+func GetAllJsonTeg(user *model.User) []string {
+	v := reflect.ValueOf(user)
+	t := v.Type()
+	tagsArr := make([]string, 0)
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		tag := field.Tag.Get("json") // Получаем значение тега "json"
+		tagsArr = append(tagsArr, tag)
+		fmt.Printf("%s: %s\n", field.Name, tag)
+	}
+	return tagsArr
 }

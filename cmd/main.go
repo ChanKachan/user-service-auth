@@ -16,6 +16,7 @@ func main() {
 	r.HandleFunc("/users/{id}", handler.GetInfoUser).Methods("GET")
 	r.HandleFunc("/users/register", handler.PostUser).Methods("POST")
 	r.HandleFunc("/users/auth", handler.PostLogin).Methods("POST")
+	r.HandleFunc("/users/updateUser", handler.PutUser).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 }

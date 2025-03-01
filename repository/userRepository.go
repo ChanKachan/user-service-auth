@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
+	"reflect"
 	"regexp"
 	"user-service/internal/auth"
 	"user-service/internal/model"
@@ -13,8 +15,7 @@ type UserRepository interface {
 	CreateUser(user *model.User) (*model.User, error)
 	GetUserByID(id int) (*model.User, error)
 	GetUserExist(user *model.User) (*model.User, error)
-	//GetUserByEmail(email string) (*model.User, error)
-	//UpdateUser(user *model.User) error
+	UpdateUser(user *model.User) error
 	//DeleteUser(id string) error
 }
 type userRepository struct {
@@ -92,6 +93,32 @@ func (u userRepository) GetUserExist(user *model.User) (*model.User, error) {
 	}
 	user.Patronymic = auth.CheckPatronymic(&user.Patronymic)
 	return user, nil
+}
+
+func (u *userRepository) UpdateUser(user *model.User) error {
+	defer u.logger.Sync()
+	defer u.dbpool.Close()
+
+	var err error
+
+	//tagsArr := auth.GetAllJsonTeg(user)
+
+	v := reflect.ValueOf(user)
+	t := v.Type()
+	//tagsArr := make([]string, 0)
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		tag := field.Tag.Get("json") // Получаем значение тега "json"
+		if field.Name == "" {
+			continue
+		}
+		_, err = u.dbpool.Exec(context.Background(), `UPDATE "user" SET %s = $1 WHERE id = $2`, &tag, &field.Name, &user.ID)
+		if err != nil {
+			break
+		}
+		fmt.Printf("%s: %s\n", field.Name, tag)
+	}
+	return err
 }
 
 func isValidEmail(email string) bool {

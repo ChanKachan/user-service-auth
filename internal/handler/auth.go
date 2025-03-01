@@ -55,3 +55,19 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 		ID: user.ID, Name: user.Name, Patronymic: user.Patronymic, Surname: user.Surname, Email: user.Email, PhoneNumber: user.PhoneNumber, Login: user.Login,
 	})
 }
+
+func PutUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var user *model.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	rep := repository.NewUserRepository(database.ConnectDataBase(), logger.InitLogger())
+	err = rep.UpdateUser(user)
+
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	json.NewEncoder(w).Encode(&model.User{
+		ID: user.ID, Name: user.Name, Patronymic: user.Patronymic, Surname: user.Surname, Email: user.Email, PhoneNumber: user.PhoneNumber, Login: user.Login,
+	})
+}
