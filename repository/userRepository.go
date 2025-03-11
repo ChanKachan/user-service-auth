@@ -98,25 +98,31 @@ func (u userRepository) GetUserExist(user *model.User) (*model.User, error) {
 func (u *userRepository) UpdateUser(user *model.User) error {
 	defer u.logger.Sync()
 	defer u.dbpool.Close()
+	u.logger.Info(fmt.Sprintf("Updating user with id: %d", user.ID))
 
 	var err error
+	//mapElementToStruct := make(map[string]interface{})
 
 	//tagsArr := auth.GetAllJsonTeg(user)
 
-	v := reflect.ValueOf(user)
+	v := reflect.ValueOf(*user)
 	t := v.Type()
 	//tagsArr := make([]string, 0)
+	u.logger.Info(fmt.Sprintf("Updating user with id: %d", user.ID))
 	for i := 0; i < v.NumField(); i++ {
 		field := t.Field(i)
 		tag := field.Tag.Get("json") // Получаем значение тега "json"
-		if field.Name == "" {
+
+		if v.Field(i).IsZero() || tag == "id" {
 			continue
 		}
-		_, err = u.dbpool.Exec(context.Background(), `UPDATE "user" SET %s = $1 WHERE id = $2`, &tag, &field.Name, &user.ID)
+		//mapElementToStruct[tag] = user.Name
+		query := fmt.Sprintf(`UPDATE "user" SET %s = $1 WHERE id = $2`, tag)
+		_, err = u.dbpool.Exec(context.Background(), query, v.Field(i).Interface(), &user.ID)
+
 		if err != nil {
 			break
 		}
-		fmt.Printf("%s: %s\n", field.Name, tag)
 	}
 	return err
 }
