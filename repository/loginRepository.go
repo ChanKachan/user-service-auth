@@ -53,7 +53,7 @@ func (repo *loginRepository) Authenticate(login *model.LoginRequest) (model.Logi
 	// Создаем новый JWT-токен и подписываем его по алгоритму HS256
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 
-	t, err := token.SignedString(*config.JWTSecretKey)
+	t, err := token.SignedString(config.JWTSecretKey)
 	if err != nil {
 		err = errors.New("failed to create token JWT")
 		return authTokken, err

@@ -2,54 +2,67 @@ package auth
 
 import (
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
-	"net/mail"
-	"reflect"
-	"user-service/internal/model"
+	"github.com/golang-jwt/jwt/v5"
+	"net/http"
+	"strings"
+	"user-service/internal/config"
 )
 
-func HashPassword(password *string) (*string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	str := string(bytes)
-	return &str, err
-}
+var Login *string
 
-// CheckPatronymic проверяет является ли patronymic nil или нет
-func CheckPatronymic(patronymic *string) string {
-	if patronymic == nil {
-		*patronymic = ""
-		return *patronymic
-	} else {
-		return *patronymic
-	}
-}
+func JWTAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Извлекаем токен из заголовка Authorization
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header is required", http.StatusUnauthorized)
+			return
+		}
 
-// CheckPassword проверяет, соответствует ли введенный пароль хешу.
-func CheckPassword(hashedPassword, password *string) error {
-	return bcrypt.CompareHashAndPassword([]byte(*hashedPassword), []byte(*password))
-}
+		// Проверяем, что заголовок имеет формат "Bearer <token>"
+		tokenParts := strings.Split(authHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
+			return
+		}
 
-// IsValidEmail проверяет действительность адреса электронной почты.
-func IsValidEmail(email string) (string, error) {
-	_, err := mail.ParseAddress(email)
-	if err != nil {
-		return "", err
-	}
-	return email, nil
-}
+		tokenString := tokenParts[1]
 
-func GetAllJsonTeg(user *model.User) []string {
-	v := reflect.ValueOf(user)
-	t := v.Type()
-	tagsArr := make([]string, 0)
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("json") // Получаем значение тега "json"
-		tagsArr = append(tagsArr, tag)
-		fmt.Printf("%s: %s\n", field.Name, tag)
+		// Верифицируем токен
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Проверяем метод подписи
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return config.JWTSecretKey, nil
+		})
+
+		if err != nil {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		// Проверяем, валиден ли токен
+		if !token.Valid {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		// Извлекаем claims (утверждения) из токена
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
+		login, ok := claims["sub"].(string)
+		if !ok {
+			http.Error(w, "Invalid user ID in token", http.StatusUnauthorized)
+			return
+		}
+		Login = &login
+
+		// Если токен валиден, передаем управление следующему обработчику
+		next.ServeHTTP(w, r)
 	}
-	return tagsArr
 }

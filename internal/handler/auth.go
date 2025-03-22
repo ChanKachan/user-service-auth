@@ -12,6 +12,7 @@ import (
 	"user-service/repository"
 )
 
+// GetInfoUser возращает при успешном вводе JSON файл при успешном поиске
 func GetInfoUser(w http.ResponseWriter, r *http.Request) {
 	logger := logger.InitLogger()
 	w.Header().Set("Content-Type", "application/json")
@@ -27,6 +28,7 @@ func GetInfoUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Добавляем нового юзера, при введение корректных данных
 func PostUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var user *model.User

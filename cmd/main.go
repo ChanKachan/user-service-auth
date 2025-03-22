@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"user-service/internal/auth"
 	"user-service/internal/config"
 	"user-service/internal/handler"
 	"user-service/internal/logger"
@@ -16,13 +17,13 @@ func main() {
 	logger := logger.InitLogger()
 	defer logger.Sync()
 
-	config.Init(&jwtKey)
+	config.Init(jwtKey)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/users/{id}", handler.GetInfoUser).Methods("GET")
 	r.HandleFunc("/users/register", handler.PostUser).Methods("POST")
 	r.HandleFunc("/users/auth", handler.PostLogin).Methods("POST")
-	r.HandleFunc("/users/updateUser", handler.PutUser).Methods("PUT")
+	r.HandleFunc("/users/updateUser", auth.JWTAuthMiddleware(handler.PutUser)).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 }

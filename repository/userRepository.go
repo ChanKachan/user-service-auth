@@ -101,6 +101,7 @@ func (u *userRepository) UpdateUser(user *model.User) error {
 	u.logger.Info(fmt.Sprintf("Updating user with id: %d", user.ID))
 
 	var err error
+	login := *auth.Login
 	//mapElementToStruct := make(map[string]interface{})
 
 	//tagsArr := auth.GetAllJsonTeg(user)
@@ -117,8 +118,8 @@ func (u *userRepository) UpdateUser(user *model.User) error {
 			continue
 		}
 		//mapElementToStruct[tag] = user.Name
-		query := fmt.Sprintf(`UPDATE "user" SET %s = $1 WHERE id = $2`, tag)
-		_, err = u.dbpool.Exec(context.Background(), query, v.Field(i).Interface(), &user.ID)
+		query := fmt.Sprintf(`UPDATE "user" SET %s = $1 WHERE login = $2`, tag)
+		_, err = u.dbpool.Exec(context.Background(), query, v.Field(i).Interface(), login)
 
 		if err != nil {
 			break
