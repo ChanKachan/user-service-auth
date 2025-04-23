@@ -8,8 +8,9 @@ import (
 	"user-service/internal/config"
 )
 
-var Login *string
+var Login, Role *string
 
+// Функция проверяет авторизировался ли пользователь. Проверяется с помощью JWT токена
 func JWTAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Извлекаем токен из заголовка Authorization
@@ -62,6 +63,12 @@ func JWTAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 		Login = &login
 
+		role, ok := claims["role"].(string)
+		if !ok {
+			http.Error(w, "Invalid role in token", http.StatusUnauthorized)
+			return
+		}
+		Role = &role
 		// Если токен валиден, передаем управление следующему обработчику
 		next.ServeHTTP(w, r)
 	}

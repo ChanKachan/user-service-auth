@@ -6,7 +6,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 	"reflect"
-	"regexp"
 	"user-service/internal/auth"
 	"user-service/internal/model"
 )
@@ -27,6 +26,7 @@ func NewUserRepository(dbpool *pgxpool.Pool, logger *zap.Logger) UserRepository 
 	return &userRepository{dbpool: dbpool, logger: logger}
 }
 
+// CreateUser создает пользователя, и записывает его в базу данных.
 func (u *userRepository) CreateUser(user *model.User) (*model.User, error) {
 	defer u.dbpool.Close()
 	defer u.logger.Sync()
@@ -102,13 +102,9 @@ func (u *userRepository) UpdateUser(user *model.User) error {
 
 	var err error
 	login := *auth.Login
-	//mapElementToStruct := make(map[string]interface{})
-
-	//tagsArr := auth.GetAllJsonTeg(user)
-
 	v := reflect.ValueOf(*user)
 	t := v.Type()
-	//tagsArr := make([]string, 0)
+
 	u.logger.Info(fmt.Sprintf("Updating user with id: %d", user.ID))
 	for i := 0; i < v.NumField(); i++ {
 		field := t.Field(i)
@@ -126,15 +122,4 @@ func (u *userRepository) UpdateUser(user *model.User) error {
 		}
 	}
 	return err
-}
-
-func isValidEmail(email string) bool {
-	// Регулярное выражение для проверки email
-	emailRegex := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
-
-	// Компилируем регулярное выражение
-	re := regexp.MustCompile(emailRegex)
-
-	// Проверяем, соответствует ли строка регулярному выражению
-	return re.MatchString(email)
 }

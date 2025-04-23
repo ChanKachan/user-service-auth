@@ -22,6 +22,8 @@ func GetInfoUser(w http.ResponseWriter, r *http.Request) {
 	user, err := rep.GetUserByID(id)
 	if err != nil {
 		logger.Error("function GetUserByID", zap.Error(err))
+		WriteError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 	json.NewEncoder(w).Encode(&model.User{
 		ID: id, Name: user.Name, Patronymic: user.Patronymic, Surname: user.Surname, Email: user.Email, PhoneNumber: user.PhoneNumber, Login: user.Login,
@@ -29,7 +31,7 @@ func GetInfoUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // Добавляем нового юзера, при введение корректных данных
-func PostUser(w http.ResponseWriter, r *http.Request) {
+func PostRegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var user *model.User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -37,7 +39,7 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 	user, err = rep.CreateUser(user)
 
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 }
@@ -51,7 +53,7 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 	loginResponse, err := rep.Authenticate(loginRequest)
 
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	json.NewEncoder(w).Encode(&loginResponse)
@@ -65,7 +67,7 @@ func PutUser(w http.ResponseWriter, r *http.Request) {
 	err = rep.UpdateUser(user)
 
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	json.NewEncoder(w).Encode(&model.User{

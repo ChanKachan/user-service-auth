@@ -18,12 +18,18 @@ func main() {
 	defer logger.Sync()
 
 	config.Init(jwtKey)
+	logger.Info("JTW key created successfully")
 
+	logger.Info("Launch user handlers")
 	r := mux.NewRouter()
 	r.HandleFunc("/users/{id}", handler.GetInfoUser).Methods("GET")
-	r.HandleFunc("/users/register", handler.PostUser).Methods("POST")
+	r.HandleFunc("/users/register", handler.PostRegisterUser).Methods("POST")
 	r.HandleFunc("/users/auth", handler.PostLogin).Methods("POST")
 	r.HandleFunc("/users/updateUser", auth.JWTAuthMiddleware(handler.PutUser)).Methods("PUT")
+
+	logger.Info("User handlers work correctly")
+
+	r.HandleFunc("/users/employee", auth.JWTAuthMiddleware(handler.PostRegisterEmployee)).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 }
