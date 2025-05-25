@@ -5,17 +5,17 @@ import (
 	"github.com/rs/cors"
 	"log"
 	"net/http"
-	"os"
 	"user-service/internal/auth"
 	"user-service/internal/config"
 	"user-service/internal/handler"
 	"user-service/internal/logger"
 	"user-service/internal/myCors"
+	"user-service/internal/readEnvFile"
 )
 
-var jwtKey = []byte(os.Getenv("JWT_KEY"))
-
 func main() {
+	jwtKey := readEnvFile.GetJwtKey()
+
 	logger := logger.InitLogger()
 	defer logger.Sync()
 
