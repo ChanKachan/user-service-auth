@@ -78,7 +78,7 @@ func (repo *loginRepository) Authenticate(login *model.LoginRequest) (model.Logi
 		Patronymic:  patronymic,
 		PhoneNumber: phone,
 		Login:       loginUser,
-		Password:    password,
+		Password:    "",
 	}
 	if role != "" {
 		user.JobTitle = role
