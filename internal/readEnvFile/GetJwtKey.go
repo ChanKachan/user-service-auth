@@ -11,7 +11,7 @@ func GetJwtKey() []byte {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	jwtKey := []byte(os.Getenv("SESSION_ENCRYPTION_KEY"))
+	jwtKey := []byte(os.Getenv("JWT_KEY"))
 	if len(jwtKey) == 0 {
 		log.Fatal("JWT_KEY is not set in .env file")
 	}
