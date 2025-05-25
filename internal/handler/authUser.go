@@ -59,6 +59,7 @@ func PostLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.NewEncoder(w).Encode(&loginResponse)
+
 }
 
 func PutUser(w http.ResponseWriter, r *http.Request) {

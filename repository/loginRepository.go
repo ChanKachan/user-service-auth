@@ -28,27 +28,29 @@ func NewLoginRepository(dbpool *pgxpool.Pool, logger *zap.Logger) *loginReposito
 func (repo *loginRepository) Authenticate(login *model.LoginRequest) (model.LoginResponse, error) {
 	defer repo.dbpool.Close()
 	defer repo.logger.Sync()
-	var loginUser, password, role string
-	var authTokken model.LoginResponse
+
+	var id int
+	var name, surname, patronymic, phone, email, loginUser, password, role string
+	var authInfo model.LoginResponse
 
 	role = ""
 	err := repo.dbpool.QueryRow(context.Background(),
-		`SELECT login, password FROM "user" WHERE login = $1`, &login.Login).
-		Scan(&loginUser, &password)
+		`SELECT id,name, surname, patronymic,phone_number,email,login, password FROM "user" WHERE login = $1`, &login.Login).
+		Scan(&id, &name, &surname, &patronymic, &phone, &email, &loginUser, &password, &loginUser, &password)
 	if err != nil {
 		err = repo.dbpool.QueryRow(context.Background(),
-			`SELECT e.login, e.password, jt.job_title FROM "employee" e INNER JOIN "job_title" jt ON e.id_job_title = jt.id  WHERE e.login = $1`, &login.Login).
-			Scan(&loginUser, &password, &role)
+			`SELECT e.id,e.name, e.surname, e.patronymic,e.phone_number,e.email,e.login, e.password, jt.job_title FROM "employee" e INNER JOIN "job_title" jt ON e.id_job_title = jt.id  WHERE e.login = $1`, &login.Login).
+			Scan(&id, &name, &surname, &patronymic, &phone, &email, &loginUser, &password, &role)
 		if err != nil {
 			err = errors.New("login or password is incorrect")
-			return authTokken, err
+			return authInfo, err
 		}
 	}
 
 	err = auth.CheckPassword(&password, &login.Password)
 	if err != nil {
 		repo.logger.Error("Incorrect login or password", zap.String("login", login.Login))
-		return authTokken, err
+		return authInfo, err
 	}
 
 	payload := jwt.MapClaims{
@@ -64,9 +66,24 @@ func (repo *loginRepository) Authenticate(login *model.LoginRequest) (model.Logi
 	t, err := token.SignedString(config.JWTSecretKey)
 	if err != nil {
 		err = errors.New("failed to create token JWT")
-		return authTokken, err
+		return authInfo, err
 	}
-	authTokken = model.LoginResponse{AccessToken: t}
-	return authTokken, nil
+
+	user := model.Employee{
+		ID:          id,
+		JobTitle:    "",
+		Email:       email,
+		Name:        name,
+		Surname:     surname,
+		Patronymic:  patronymic,
+		PhoneNumber: phone,
+		Login:       loginUser,
+		Password:    password,
+	}
+	if role != "" {
+		user.JobTitle = role
+	}
+	authInfo = model.LoginResponse{AccessToken: t, User: user}
+	return authInfo, nil
 
 }

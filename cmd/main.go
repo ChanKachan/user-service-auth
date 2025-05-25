@@ -51,5 +51,5 @@ func main() {
 	// Обертываем роутер в CORS middleware
 	handler := c.Handler(r)
 
-	log.Fatal(http.ListenAndServe(":8080", handler))
+	log.Fatal(http.ListenAndServe(":8000", handler))
 }

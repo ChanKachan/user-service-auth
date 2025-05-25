@@ -9,5 +9,6 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
+	AccessToken string   `json:"access_token"`
+	User        Employee `json:"user"`
 }
