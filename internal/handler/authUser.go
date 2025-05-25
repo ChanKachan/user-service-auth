@@ -33,7 +33,9 @@ func GetInfoUser(w http.ResponseWriter, r *http.Request) {
 // Добавляем нового юзера, при введение корректных данных
 func PostRegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
 	var user *model.User
+
 	err := json.NewDecoder(r.Body).Decode(&user)
 	rep := repository.NewUserRepository(database.ConnectDataBase(), logger.InitLogger())
 	user, err = rep.CreateUser(user)

@@ -73,6 +73,7 @@ func (u userRepository) GetUserExist(user *model.User) (*model.User, error) {
 	defer u.logger.Sync()
 	defer u.dbpool.Close()
 	var password string
+
 	err := u.dbpool.QueryRow(context.Background(),
 		`SELECT password FROM "user" WHERE login = $1`, &user.Login).
 		Scan(&password)
